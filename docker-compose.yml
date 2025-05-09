@@ -10,3 +10,11 @@ services:
       - ./videos:/app/videos
     env_file:
       - .env
+    depends_on:
+      - redis
+  
+  redis:
+    image: redis:alpine
+    container_name: redis
+    ports:
+      - 6379:6379

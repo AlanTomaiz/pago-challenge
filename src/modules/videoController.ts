@@ -15,11 +15,29 @@ export class VideoController {
       throw new AppError('Arquivo inválido. Somente vídeos são permitidos.')
     }
 
-    if (Buffer.length > FILE_MAX_SIZE) {
+    if (buffer.length > FILE_MAX_SIZE) {
       throw new AppError('Arquivo excede o tamanho máximo permitido de 10MB.')
     }
 
     await VideoService.saveVideo(originalname, buffer)
     res.status(204).send()
+  }
+
+  static async stream(req: Request, res: Response) {
+    const { filename } = req.params
+
+    const videoBuffer = await VideoService.getVideo(filename)
+    if (!videoBuffer) {
+      throw new AppError('Vídeo não encontrado.', 404)
+    }
+
+    const contentLength = videoBuffer.length
+    res
+      .status(206)
+      .header({
+        'Content-Length': contentLength,
+        'Content-Type': 'video/mp4'
+      })
+      .send(videoBuffer)
   }
 }

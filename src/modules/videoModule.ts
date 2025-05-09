@@ -8,5 +8,6 @@ export class VideoModule {
     const uploadMiddleware = multer().single('video')
 
     app.post('/upload/video', uploadMiddleware, VideoController.upload)
+    app.get('/static/video/:filename', VideoController.stream)
   }
 }
