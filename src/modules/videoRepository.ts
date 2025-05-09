@@ -5,18 +5,17 @@ import path from 'node:path'
 import { Slugfy } from '../utils/slugify.js'
 
 export class VideoRepository {
-  private static redis = new Redis()
+  private static redis = new Redis({ host: process.env.REDIS_HOST })
   private static TTL_SECONDS = 60
   private static VIDEO_DIR = path.resolve(process.cwd(), 'videos')
 
   static async saveToDisk(filename: string, buffer: Buffer) {
     const slug = Slugfy.generateSlug(filename)
+    const filePath = path.join(this.VIDEO_DIR, slug)
 
     await fs.promises.mkdir(this.VIDEO_DIR, { recursive: true })
-    const filepath = path.join(this.VIDEO_DIR, slug)
-    await fs.promises.writeFile(filepath, buffer)
-
-    this.saveCache(slug, buffer)
+    await fs.promises.writeFile(filePath, buffer)
+    await this.saveCache(slug, buffer)
   }
 
   static async getVideo(filename: string) {
@@ -30,8 +29,8 @@ export class VideoRepository {
 
     // disk
     const filepath = path.join(this.VIDEO_DIR, slug)
-    const stat = await fs.promises.stat(filepath)
-    if (!stat.isFile()) {
+    const stat = await fs.promises.stat(filepath).catch(() => null)
+    if (!stat || !stat.isFile()) {
       return null
     }
 

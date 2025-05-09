@@ -25,19 +25,51 @@ export class VideoController {
 
   static async stream(req: Request, res: Response) {
     const { filename } = req.params
+    const { range } = req.headers
 
-    const videoBuffer = await VideoService.getVideo(filename)
-    if (!videoBuffer) {
+    const buffer = await VideoService.getVideo(filename)
+    if (!buffer) {
       throw new AppError('Vídeo não encontrado.', 404)
     }
 
-    const contentLength = videoBuffer.length
+    const contentLength = buffer.length
+    if (!range) {
+      res
+        .header({
+          'Content-Length': contentLength,
+          'Content-Type': 'video/mp4'
+        })
+        .send(buffer)
+      return
+    }
+
+    const [startStr, endStr] = range.replace(/bytes=/, '').split('-')
+    const chunkStart = parseInt(startStr, 10) || 0
+    const chunkEnd = Math.min(
+      endStr ? parseInt(endStr, 10) : contentLength - 1,
+      contentLength - 1
+    )
+
+    if (
+      chunkStart >= contentLength ||
+      chunkStart > chunkEnd ||
+      isNaN(chunkStart) ||
+      isNaN(chunkEnd)
+    ) {
+      res.status(416).send('Requested Range Not Satisfiable')
+      return
+    }
+
+    const chunkSize = chunkEnd - chunkStart + 1
+    const chunk = buffer.subarray(chunkStart, chunkEnd + 1)
     res
       .status(206)
       .header({
-        'Content-Length': contentLength,
+        'Content-Range': `bytes ${chunkStart}-${chunkEnd}/${contentLength}`,
+        'Accept-Ranges': 'bytes',
+        'Content-Length': chunkSize,
         'Content-Type': 'video/mp4'
       })
-      .send(videoBuffer)
+      .send(chunk)
   }
 }
