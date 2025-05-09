@@ -1,0 +1,12 @@
+version: "3.9"
+services:
+  challenge:
+    build: .
+    image: challenge
+    container_name: challenge
+    ports:
+      - 3333:3333
+    volumes:
+      - ./videos:/app/videos
+    env_file:
+      - .env

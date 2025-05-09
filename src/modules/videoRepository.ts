@@ -1,12 +1,10 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 import { Slugfy } from '../utils/slugify.js'
 
 export class VideosRepository {
-  private static META_URL = path.dirname(fileURLToPath(import.meta.url))
-  private static VIDEO_DIR = path.resolve(this.META_URL, '../../videos')
+  private static VIDEO_DIR = path.resolve(process.cwd(), 'videos')
 
   static async saveToDisk(filename: string, buffer: Buffer) {
     const slug = Slugfy.generateSlug(filename)
